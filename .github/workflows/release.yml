@@ -1,0 +1,59 @@
+# Automatické vydání: při pushi do main (nebo tagu vX.Y.Z) přečte verzi z hlavičky pluginu.
+# Pokud release vX.Y.Z ještě neexistuje, sestaví ZIP + SHA-256 a vytvoří GitHub Release (vč. tagu).
+# Weby si aktualizaci stáhnou samy přes Bombora Cart Popup (Bombora → Moduly).
+name: Release
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*.*.*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Zjistit verzi
+        id: ver
+        run: |
+          MAIN="$(ls *.php | xargs grep -l -m1 'Plugin Name:' | head -1)"
+          VER="$(grep -m1 -E '^\s*\*\s*Version:' "$MAIN" | sed -E 's/.*Version:\s*//; s/\s+$//')"
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          if gh release view "v$VER" >/dev/null 2>&1; then echo "exists=1" >> "$GITHUB_OUTPUT"; else echo "exists=0" >> "$GITHUB_OUTPUT"; fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - uses: shivammathur/setup-php@v2
+        if: steps.ver.outputs.exists == '0'
+        with:
+          php-version: '8.2'
+          tools: none
+
+      - uses: actions/setup-node@v4
+        if: steps.ver.outputs.exists == '0'
+        with:
+          node-version: '20'
+
+      - name: Build
+        if: steps.ver.outputs.exists == '0'
+        run: bash build.sh
+
+      - name: Release
+        if: steps.ver.outputs.exists == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="${{ steps.ver.outputs.version }}"
+          NOTES="$(awk "/^## \\[${V}\\]/{f=1;next}/^## \\[/{f=0}f" CHANGELOG.md)"
+          SLUG="$(basename dist/*.zip .zip)"
+          gh release create "v$V" "dist/$SLUG.zip" "dist/$SLUG.zip.sha256" \
+            --target "$GITHUB_SHA" --title "$(grep -m1 'Plugin Name:' *.php | sed -E 's/.*Plugin Name:\s*//') v$V" --notes "$NOTES"
