@@ -230,7 +230,19 @@ final class Admin {
 								<?php endif; ?>
 							</td>
 							<td>
-								<?php echo $st ? esc_html( wp_date( $fmt, (int) $st['finished'] ) ) : '–'; ?>
+								<?php echo ! empty( $st['finished'] ) ? esc_html( wp_date( $fmt, (int) $st['finished'] ) ) : '–'; ?>
+								<?php if ( ! empty( $st['check'] ) && 'n/a' !== $st['check'] ) : ?>
+									<br><strong style="color:<?php echo 'ok' === $st['check'] ? '#008a20' : '#d63638'; ?>">
+										<?php echo 'ok' === $st['check'] ? esc_html__( 'Language OK', 'bombora-mergado-wpml' ) : esc_html( __( 'Wrong language:', 'bombora-mergado-wpml' ) . ' ' . $st['check'] ); ?>
+									</strong>
+								<?php endif; ?>
+								<?php if ( ! empty( $st['diag'] ) ) : ?>
+									<details><summary><?php esc_html_e( 'Diagnostics', 'bombora-mergado-wpml' ); ?></summary>
+										<?php foreach ( (array) $st['diag'] as $d ) : ?>
+											<code><?php echo esc_html( sprintf( 'WPML=%s lang=%s sf=%s | %s', $d['wpml'] ?? '', $d['qlang'] ?? '', $d['sf'] ?? '', $d['hooks'] ?? '' ) ); ?></code><br>
+										<?php endforeach; ?>
+									</details>
+								<?php endif; ?>
 								<?php if ( $cron ) : ?>
 									<br><a href="<?php echo esc_url( $cron ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Run one batch now', 'bombora-mergado-wpml' ); ?></a>
 								<?php endif; ?>

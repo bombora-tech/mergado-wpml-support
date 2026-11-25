@@ -50,8 +50,58 @@ final class Cron {
 		foreach ( array( 'parse_request', 'wp', 'template_redirect' ) as $hook ) {
 			add_action( $hook, $switch, 0 );
 		}
+		// Mergado generuje feed brzy (na init) – WPML tou dobou jazyk z URL znovu nastaví.
+		// Proto jazyk přepneme také hned po init WPML a těsně před každým dotazem na produkty a termy.
+		foreach ( array( 2, 3, 5, 9 ) as $prio ) {
+			add_action( 'init', $switch, $prio );
+		}
+		add_action( 'pre_get_posts', array( __CLASS__, 'before_query' ), 0 );
+		add_action( 'pre_get_posts', array( __CLASS__, 'diagnose_query' ), PHP_INT_MAX );
+		add_action( 'pre_get_terms', $switch, 0 );
+
 		add_filter( 'wpml_current_language', array( __CLASS__, 'filter_current_language' ), PHP_INT_MAX );
 		add_action( 'shutdown', array( __CLASS__, 'copy_finished_feeds' ), PHP_INT_MAX );
+	}
+
+	/**
+	 * Těsně před dotazem: přepnout WPML a dát dotazu jazyk i jako query var (WPML ho respektuje).
+	 *
+	 * @param \WP_Query $q Dotaz.
+	 */
+	public static function before_query( $q ): void {
+		if ( '' === self::$lang || ! ( $q instanceof \WP_Query ) ) {
+			return;
+		}
+		self::switch_language();
+		if ( self::is_product_query( $q ) && '' !== self::$lang ) {
+			$q->set( 'lang', self::$lang );
+		}
+	}
+
+	private static function is_product_query( \WP_Query $q ): bool {
+		$pt = (array) $q->get( 'post_type' );
+		return in_array( 'product', $pt, true ) || in_array( 'product_variation', $pt, true );
+	}
+
+	/** @var array<int,array<string,mixed>> */
+	private static array $diag = array();
+
+	/**
+	 * Diagnostika: jazyk WPML v okamžiku prvních dotazů na produkty + zásobník hooků.
+	 *
+	 * @param \WP_Query $q Dotaz.
+	 */
+	public static function diagnose_query( $q ): void {
+		if ( '' === self::$lang || count( self::$diag ) >= 3 || ! ( $q instanceof \WP_Query ) || ! self::is_product_query( $q ) ) {
+			return;
+		}
+		global $sitepress, $wp_current_filter;
+		self::$diag[] = array(
+			'wpml'  => ( is_object( $sitepress ) && method_exists( $sitepress, 'get_current_language' ) ) ? (string) $sitepress->get_current_language() : '-',
+			'qlang' => (string) $q->get( 'lang' ),
+			'hooks' => implode( ' > ', array_slice( (array) $wp_current_filter, 0, 6 ) ),
+			'sf'    => $q->get( 'suppress_filters' ) ? 'yes' : 'no',
+		);
 	}
 
 	private static function is_mergado_cron(): bool {
@@ -155,13 +205,31 @@ final class Cron {
 		}
 
 		if ( ! $copied ) {
+			if ( self::$diag ) {
+				$status                         = Settings::status();
+				$status[ self::$lang ]['diag'] = self::$diag;
+				update_option( Settings::STATUS, $status, false );
+			}
 			return; // dávka hotová, feed ještě ne – zámek zůstává
+		}
+
+		// Kontrola jazyka výsledku: u nevýchozího jazyka musí URL produktů obsahovat /xx/.
+		$check   = 'n/a';
+		$default = Settings::default_language();
+		if ( $default && self::$lang !== $default ) {
+			$sample = (string) @file_get_contents( $out . '/' . basename( (string) $copied[0]['url'] ), false, null, 0, 200000 ); // phpcs:ignore
+			if ( preg_match_all( '~<URL>([^<]+)</URL>~i', $sample, $m ) && $m[1] ) {
+				$hits  = count( array_filter( $m[1], static fn( $u ) => false !== strpos( $u, '/' . self::$lang . '/' ) ) );
+				$check = $hits === count( $m[1] ) ? 'ok' : sprintf( 'mismatch %d/%d', $hits, count( $m[1] ) );
+			}
 		}
 
 		$status                = Settings::status();
 		$status[ self::$lang ] = array(
 			'finished' => time(),
 			'files'    => $copied,
+			'check'    => $check,
+			'diag'     => self::$diag,
 		);
 		update_option( Settings::STATUS, $status, false );
 		delete_option( Settings::LOCK );

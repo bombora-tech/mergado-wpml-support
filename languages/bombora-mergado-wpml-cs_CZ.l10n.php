@@ -42,5 +42,8 @@ return array(
 		'While a language is being generated, other languages wait. The lock expires this many minutes after the last batch (e.g. after an interrupted run).' => 'Během generování jednoho jazyka ostatní čekají. Zámek vyprší po tolika minutách od poslední dávky (např. po přerušeném běhu).',
 		'You are not allowed to do this.' => 'K této akci nemáte oprávnění.',
 		'default language' => 'výchozí jazyk',
+		'Language OK' => 'Jazyk OK',
+		'Wrong language:' => 'Špatný jazyk:',
+		'Diagnostics' => 'Diagnostika',
 	),
 );

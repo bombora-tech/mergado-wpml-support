@@ -2,6 +2,15 @@
 
 Formát podle [Keep a Changelog](https://keepachangelog.com/cs/), verze podle [SemVer](https://semver.org/lang/cs/).
 
+## [1.1.0] - 2026-11-25
+
+### Opraveno
+- Feed nevýchozího jazyka se generoval ve výchozím jazyce: Mergado generuje celý feed už na `init`, kdy WPML jazyk z URL přepíše. Jazyk se nově přepíná i hned po inicializaci WPML (`init` 2–9) a těsně před každým dotazem na produkty a termy (`pre_get_posts`, `pre_get_terms`); dotazům na produkty se předává i `lang`.
+
+### Přidáno
+- Kontrola výsledku: u nevýchozího jazyka se ověří, že URL produktů ve feedu obsahují `/xx/` („Jazyk OK“ / „Špatný jazyk“).
+- Diagnostika posledního běhu (jazyk WPML a zásobník hooků při prvních dotazech na produkty).
+
 ## [1.0.0] - 2026-11-25
 
 ### Přidáno
