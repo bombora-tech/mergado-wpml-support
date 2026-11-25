@@ -193,8 +193,13 @@ final class Cron {
 
 				$target = $out . '/' . $file->getBasename( '.xml' ) . '-' . self::$lang . '.xml';
 				$tmp    = $target . '.part';
-				if ( @copy( $path, $tmp ) && @rename( $tmp, $target ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors
+				if ( @copy( $path, $tmp ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors
+					$enriched = Enrich::file( $tmp );
+					if ( ! @rename( $tmp, $target ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors
+						continue;
+					}
 					$copied[] = array(
+						'enriched' => $enriched,
 						'source' => str_replace( wp_normalize_path( ABSPATH ), '/', wp_normalize_path( $path ) ),
 						'url'    => str_replace( $base, (string) $u['baseurl'], $target ),
 						'bytes'  => (int) filesize( $target ),

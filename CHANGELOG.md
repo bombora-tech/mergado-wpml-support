@@ -2,6 +2,11 @@
 
 Formát podle [Keep a Changelog](https://keepachangelog.com/cs/), verze podle [SemVer](https://semver.org/lang/cs/).
 
+## [1.2.0] - 2026-11-25
+
+### Přidáno
+- Doplnění feedu z WooCommerce: Mergado Pack u balíčků WPC Product Bundles (`woosb`) vynechává `SHIPPING_WEIGHT`, `CATEGORY` a `PRODUCTNO`. Plugin je po dokončení feedu doplní z produktu (váha, kategorie s primární kategorií Rank Math/Yoast na prvním místě, SKU). Položky, které údaje mají, zůstávají beze změny. Počet doplněných hodnot se zobrazuje v administraci.
+
 ## [1.1.0] - 2026-11-25
 
 ### Opraveno

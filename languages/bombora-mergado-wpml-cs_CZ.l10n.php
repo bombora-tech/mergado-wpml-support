@@ -6,6 +6,7 @@ return array(
 	'language'     => 'cs_CZ',
 	'messages'     => array(
 		'%1$s, %2$d items' => '%1$s, položek: %2$d',
+		'added: weight %1$d, category %2$d, SKU %3$d' => 'doplněno: váha %1$d, kategorie %2$d, SKU %3$d',
 		'1. Cron URL from Mergado Pack' => '1. Cron URL z Mergado Pack',
 		'2. URLs for each language' => '2. URL pro jednotlivé jazyky',
 		'Connect Mergado / Merchant Center to the feed URLs above, not to the original Mergado feed – that one always contains the language of the last run.' => 'Mergado / Merchant Center napojte na URL feedů výše, ne na původní feed Mergada – ten obsahuje vždy jazyk posledního běhu.',

@@ -222,6 +222,16 @@ final class Admin {
 												esc_html( (string) size_format( (int) $f['bytes'] ) ),
 												(int) ( $f['items'] ?? 0 )
 											);
+											if ( ! empty( $f['enriched'] ) && is_array( $f['enriched'] ) ) {
+												echo ' &middot; ';
+												printf(
+													/* translators: 1: weights, 2: categories, 3: SKUs added */
+													esc_html__( 'added: weight %1$d, category %2$d, SKU %3$d', 'bombora-mergado-wpml' ),
+													(int) ( $f['enriched']['weight'] ?? 0 ),
+													(int) ( $f['enriched']['category'] ?? 0 ),
+													(int) ( $f['enriched']['productno'] ?? 0 )
+												);
+											}
 											?>
 										</small><br>
 									<?php endforeach; ?>
